@@ -1,0 +1,13 @@
+#!/usr/bin/env php
+<?php
+
+if ( 'cli' !== PHP_SAPI ) {
+	echo "Only CLI access." . PHP_EOL;
+	exit( 1 );
+}
+
+require_once __DIR__ . '/bootstrap.php';
+
+$app = new \WpEasyTranslate\Console\Application();
+
+$app->run();

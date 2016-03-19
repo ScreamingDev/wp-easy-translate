@@ -1,0 +1,32 @@
+{
+  "name": "sourcerer-mike/wp-easy-translate",
+  "description": "Easily manage translations with your team and VCS like GIT or SVN.",
+  "authors": [
+    {
+      "name": "Mike Pretzlaw",
+      "email": "pretzlaw@gmail.com"
+    }
+  ],
+  "license": "MIT",
+  "version": "0.1.0",
+  "config": {
+    "bin-dir": "bin",
+    "vendor-dir": "opt"
+  },
+  "bin": [
+    "lib/wp-easy-translate"
+  ],
+  "autoload": {
+    "psr-4": {
+      "WpEasyTranslate\\": "lib/WpEasyTranslate"
+    }
+  },
+  "require": {
+    "symfony/finder": "~2",
+    "symfony/console": "~2",
+    "gettext/gettext": "~3"
+  },
+  "require-dev": {
+    "sourcerer-mike/phpsemver": "~3"
+  }
+}
