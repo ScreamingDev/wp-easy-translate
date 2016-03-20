@@ -2,8 +2,21 @@
 
 define( 'EASYTRANSLATE_LIB_PATH', __DIR__ );
 
-$composer = json_decode( file_get_contents( EASYTRANSLATE_LIB_PATH . '/../composer.json' ) );
+$composerDir = EASYTRANSLATE_LIB_PATH . '/../';
+if ( file_exists( __DIR__ . '/../../../../composer.json' ) ) {
+	$composerDir = __DIR__ . '/../../../../';
+}
 
-define( 'EASYTRANSLATE_VERSION', $composer->version );
+$parentComposer = json_decode( file_get_contents( $composerDir . 'composer.json' ) );
 
-require_once __DIR__ . '/../' . $composer->config->{'vendor-dir'} . '/autoload.php';
+if ( ! isset( $parentComposer->config->{'vendor-dir'} ) || ! $parentComposer->config->{'vendor-dir'} ) {
+	$parentComposer->config->{'vendor-dir'} = 'vendor';
+}
+
+$ownComposer = json_decode( file_get_contents( __DIR__ . '/../composer.json' ) );
+
+define( 'EASYTRANSLATE_VERSION', $ownComposer->version );
+
+// highest composer.json
+
+require_once $composerDir . $parentComposer->config->{'vendor-dir'} . '/autoload.php';
