@@ -3,6 +3,7 @@
 namespace WpEasyTranslate\Console;
 
 
+use Gettext\Generators\PhpArray;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -65,7 +66,7 @@ class ThemesCommand extends AbstractCommand {
 
 			$extractor                   = new WordPressExtractor();
 			$extractor::$extractComments = true;
-			$extractor::$textDomain       = $textDomain;
+			$extractor::$textDomain      = $textDomain;
 			$translatable                = $extractor->fromFile( $php_files );
 
 			// todo B fetch and merge translations from po file
@@ -93,7 +94,25 @@ class ThemesCommand extends AbstractCommand {
 				$current_translation->setDomain( $textDomain );
 				$current_translation->ksort();
 
-				$current_translation->toPhpArrayFile( $lang_php );
+				// json
+				$array = PhpArray::toArray( $current_translation );
+
+				$values = current( $array );
+				if ( array_key_exists( '', $values ) ) {
+					unset( $values[''] );
+				}
+
+				$values = array_map(
+					function ( $val ) {
+						return isset( $val[1] ) ? $val[1] : '';
+					},
+					$values
+				);
+
+				file_put_contents(
+					$langPath . DIRECTORY_SEPARATOR . $lang . '.json',
+					json_encode( $values, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE )
+				);
 
 				// merge and push in mo file
 				$current_translation->toMoFile( $langPath . DIRECTORY_SEPARATOR . $lang . '.mo' );
