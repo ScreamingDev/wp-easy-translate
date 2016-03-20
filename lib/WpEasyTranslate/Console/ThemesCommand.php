@@ -6,6 +6,7 @@ namespace WpEasyTranslate\Console;
 use Gettext\Generators\PhpArray;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
 use WpEasyTranslate\Gettext\WordPressExtractor;
@@ -17,107 +18,127 @@ use WpEasyTranslate\Helper\WpTheme;
  *
  * @package WpEasyTranslate\Console
  */
-class ThemesCommand extends AbstractCommand {
-	protected function execute( InputInterface $input, OutputInterface $output ) {
-		Wp::load();
+class ThemesCommand extends AbstractCommand
+{
+    protected function configure()
+    {
+        $this->addOption(
+            'format',
+            null,
+            InputOption::VALUE_OPTIONAL,
+            'Format to fetch translations from. Can be "json", "po" or "php".',
+            'po'
+        );
 
-		$merge_mode = \Gettext\Translations::MERGE_ADD
-		              | \Gettext\Translations::MERGE_REMOVE
-		              | \Gettext\Translations::MERGE_COMMENTS
-		              | \Gettext\Translations::MERGE_HEADERS
-		              | \Gettext\Translations::MERGE_PLURAL;
+        parent::configure();
+    }
 
-		$themes = wp_get_themes();
 
-		foreach ( $themes as $slug => $theme ) {
-			/** @var \WP_Theme $theme */
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        Wp::load();
 
-			// resolve readable name
-			$name = $slug;
+        $merge_mode = \Gettext\Translations::MERGE_ADD
+                      | \Gettext\Translations::MERGE_REMOVE
+                      | \Gettext\Translations::MERGE_COMMENTS
+                      | \Gettext\Translations::MERGE_HEADERS
+                      | \Gettext\Translations::MERGE_PLURAL;
 
-			if ( $theme->get( 'Name' ) ) {
-				$name = $theme->get( 'Name' );
-			}
+        $themes = wp_get_themes();
 
-			$this->verbose( 'Checking ' . $name );
+        $morphMapping = [
+            'json' => 'toJsonDictionaryFile',
+            'po'   => 'toPoFile',
+            'php'  => 'toPhpArrayFile',
+        ];
 
-			// resolve theme text domain
-			$textDomain = $name;
-			if ( $theme->get( 'TextDomain' ) ) {
-				$textDomain = $theme->get( 'TextDomain' );
-			}
+        if ( ! isset( $morphMapping[$input->getOption('format')] )) {
+            throw new \InvalidArgumentException(
+                'Unknown format: '.$input->getOption('format')
+            );
+        }
 
-			$this->verbose( ' (TextDomain: ' . $textDomain . ')' . PHP_EOL );
+        $morphMethod = $morphMapping[$input->getOption('format')];
 
-			$langPath = WpTheme::resolveLanguagesPath( $theme );
+        foreach ($themes as $slug => $theme) {
+            /** @var \WP_Theme $theme */
 
-			// fetch strings
-			$php_files = new \Symfony\Component\Finder\Finder();
-			$php_files->files()
-			          ->in( $theme->get_template_directory() )
-			          ->exclude( basename( $langPath ) )
-			          ->name( '*.php' )
-			          ->name( '*.phtml' );
+            // resolve readable name
+            $name = $slug;
 
-			$php_files = iterator_to_array( $php_files->getIterator() );
-			$php_files = array_map( 'strval', $php_files );
+            if ($theme->get('Name')) {
+                $name = $theme->get('Name');
+            }
 
-			$this->debug( '    Scanning ' . count( $php_files ) . ' files' . PHP_EOL );
+            $this->verbose('Checking '.$name);
 
-			$extractor                   = new WordPressExtractor();
-			$extractor::$extractComments = true;
-			$extractor::$textDomain      = $textDomain;
-			$translatable                = $extractor->fromFile( $php_files );
+            // resolve theme text domain
+            $textDomain = $name;
+            if ($theme->get('TextDomain')) {
+                $textDomain = $theme->get('TextDomain');
+            }
 
-			// todo B fetch and merge translations from po file
+            $this->verbose(' (TextDomain: '.$textDomain.')'.PHP_EOL);
 
-			$translatable->setDomain( $textDomain );
-			$translatable->ksort();
+            $langPath = WpTheme::resolveLanguagesPath($theme);
 
-			$translatable->toPhpArrayFile( $langPath . '/empty.php' );
+            // fetch strings
+            $php_files = new \Symfony\Component\Finder\Finder();
+            $php_files->files()
+                      ->in($theme->get_template_directory())
+                      ->exclude(basename($langPath))
+                      ->name('*.php')
+                      ->name('*.phtml');
 
-			// iterate over languages
-			foreach ( glob( $langPath . '/*.php' ) as $lang_file ) {
-				$lang = basename( $lang_file, '.php' );
+            $php_files = iterator_to_array($php_files->getIterator());
+            $php_files = array_map('strval', $php_files);
 
-				if ( 'empty' == $lang ) {
-					continue;
-				}
+            $this->debug('    Scanning '.count($php_files).' files'.PHP_EOL);
 
-				// merge and push in php array
-				$lang_php = $langPath . DIRECTORY_SEPARATOR . $lang . '.php';
-				if ( file_exists( $lang_php ) ) {
-					$current_translation = \Gettext\Extractors\PhpArray::fromFile( $lang_file );
-					$current_translation->mergeWith( $translatable, $merge_mode );
-				}
+            $extractor                   = new WordPressExtractor();
+            $extractor::$extractComments = true;
+            $extractor::$textDomain      = $textDomain;
+            $translatable                = $extractor->fromFile($php_files);
 
-				$current_translation->setDomain( $textDomain );
-				$current_translation->ksort();
+            // todo B fetch and merge translations from po file
 
-				// json
-				$array = PhpArray::toArray( $current_translation );
+            $translatable->setDomain($textDomain);
+            $translatable->ksort();
 
-				$values = current( $array );
-				if ( array_key_exists( '', $values ) ) {
-					unset( $values[''] );
-				}
+            $translatable->$morphMethod($langPath.'/empty.'.$input->getOption('format'));
 
-				$values = array_map(
-					function ( $val ) {
-						return isset( $val[1] ) ? $val[1] : '';
-					},
-					$values
-				);
+            // iterate over languages
+            foreach (glob($langPath.'/*.'.$input->getOption('format')) as $lang_file) {
+                $lang = basename($lang_file, '.'.$input->getOption('format'));
 
-				file_put_contents(
-					$langPath . DIRECTORY_SEPARATOR . $lang . '.json',
-					json_encode( $values, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE )
-				);
+                if ('empty' == $lang) {
+                    continue;
+                }
 
-				// merge and push in mo file
-				$current_translation->toMoFile( $langPath . DIRECTORY_SEPARATOR . $lang . '.mo' );
-				$this->verbose( '    Updated ' . $lang . PHP_EOL );
-			}
-		}
-	}
+                // merge and push in php array
+                $lang_php = $langPath.DIRECTORY_SEPARATOR.$lang.'.'.$input->getOption('format');
+                if (file_exists($lang_php)) {
+                    $current_translation = \Gettext\Extractors\PhpArray::fromFile($lang_file);
+                    $current_translation->mergeWith($translatable, $merge_mode);
+                }
+
+                $current_translation->setDomain($textDomain);
+                $current_translation->ksort();
+
+                // json
+                $array = PhpArray::toArray($current_translation);
+
+                $values = current($array);
+                if (array_key_exists('', $values)) {
+                    unset( $values[''] );
+                }
+
+                $current_translation->$morphMethod($langPath.DIRECTORY_SEPARATOR.$lang.'.'.$input->getOption('format'));
+
+                // merge and push in mo file
+                $current_translation->toMoFile($langPath.DIRECTORY_SEPARATOR.$lang.'.mo');
+                $this->verbose('    Updated '.$lang.PHP_EOL);
+            }
+        }
+    }
 }
