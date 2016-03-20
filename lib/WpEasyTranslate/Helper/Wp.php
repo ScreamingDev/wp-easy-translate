@@ -11,6 +11,9 @@ class Wp {
 			throw new \Exception( 'Could resolve find WordPress path' );
 		}
 
+		// suppress internal errors
+		define( 'WP_DEBUG', false );
+
 		require_once $path . DIRECTORY_SEPARATOR . 'wp-load.php';
 	}
 
