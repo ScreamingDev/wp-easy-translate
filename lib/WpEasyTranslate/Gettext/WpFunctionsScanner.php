@@ -1,7 +1,8 @@
 <?php
 
-namespace  WpEasyTranslate\Gettext;
+namespace WpEasyTranslate\Gettext;
 
+use Gettext\Translation;
 use Gettext\Translations;
 use Gettext\Utils\PhpFunctionsScanner;
 
@@ -12,61 +13,97 @@ class WpFunctionsScanner extends PhpFunctionsScanner {
 		foreach ( $this->getFunctions() as $function ) {
 			list( $name, $line, $args ) = $function;
 
-			if ( ! isset( $functions[ $name ] ) ) {
+			if ( ! isset( $args[1] ) ) {
 				continue;
 			}
 
-			if ( isset( $args[1] ) && $textDomain != $args[1] ) {
+			$name = str_replace( '__', '', $name );
+			$name = str_replace( '_noop', '', $name );
+			$name = ltrim( $name, '_' );
+
+			$parser_name = 'parse' . $name;
+			if ( ! method_exists( $this, $parser_name ) ) {
 				continue;
 			}
 
-			$translation = null;
+			$translation = $this->$parser_name( $args, $translations );
 
-			switch ( $functions[ $name ] ) {
-				case '__':
-					if ( ! isset( $args[0] ) ) {
-						continue 2;
-					}
-					$original = $args[0];
-					if ( $original !== '' ) {
-						$translation = $translations->insert( '', $original );
-					}
-					break;
-
-				case 'n__':
-					if ( ! isset( $args[1] ) ) {
-						continue 2;
-					}
-					$original = $args[0];
-					$plural   = $args[1];
-					if ( $original !== '' ) {
-						$translation = $translations->insert( '', $original, $plural );
-					}
-					break;
-
-				case 'p__':
-					if ( ! isset( $args[1] ) ) {
-						continue 2;
-					}
-					$context  = $args[0];
-					$original = $args[1];
-					if ( $original !== '' ) {
-						$translation = $translations->insert( $context, $original );
-					}
-					break;
-
-				default:
-					throw new \Exception( 'Not valid functions' );
+			if ( ! $translation ) {
+				continue;
 			}
 
-			if ( isset( $translation ) ) {
-				$translation->addReference( $file, $line );
-				if ( isset( $function[3] ) ) {
-					foreach ( $function[3] as $extractedComment ) {
-						$translation->addExtractedComment( $extractedComment );
-					}
-				}
-			}
+			/** @var Translation $translation */
+
+			$translation->addReference( $file, $line );
 		}
 	}
+
+	protected function parse_e( $args, Translations $translations ) {
+		return $this->parse( $args, $translations );
+	}
+
+	/**
+	 * @param              $args
+	 * @param Translations $translations
+	 *
+	 * @return \Gettext\Translation
+	 */
+	protected function parse( $args, Translations $translations ) {
+		if ( ! isset( $args[0] ) || ! $args[0] ) {
+			// skip empty translations
+			return;
+		}
+
+		if ( ! isset( $args[1] ) || ! $args[1] ) {
+			// skip unknown text-domains
+			return;
+		}
+
+		$translation = $translations->insert( '', $args[0] );
+
+		if ( isset( $function[3] ) ) {
+			foreach ( $function[3] as $extractedComment ) {
+				$translation->addExtractedComment( $extractedComment );
+			}
+		}
+
+
+		return $translation;
+	}
+
+	protected function parse_esc_attr( $args, Translations $translations ) {
+		return $this->parse( $args, $translations );
+	}
+
+	protected function parse_esc_attr_e( $args, Translations $translations ) {
+		return $this->parse( $args, $translations );
+	}
+
+	protected function parse_esc_html( $args, Translations $translations ) {
+		return $this->parse( $args, $translations );
+	}
+
+	protected function parse_esc_html_e( $args, Translations $translations ) {
+		return $this->parse( $args, $translations );
+	}
+
+	protected function parse_n( $args, Translations $translations ) {
+		if ( count( $args ) < 4 ) {
+			// not enough data
+			return;
+		}
+
+		$singular = [ $args[0], $args[3] ];
+
+		$this->parse( $singular, $translations );
+
+		$plural = [ $args[1], $args[3] ];
+
+		$this->parse( $plural, $translations );
+	}
+
+	// todo _x
+	// todo _ex
+	// todo _nx
+
 }
