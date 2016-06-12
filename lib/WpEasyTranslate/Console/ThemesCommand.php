@@ -83,62 +83,69 @@ class ThemesCommand extends AbstractCommand
             $langPath = WpTheme::resolveLanguagesPath($theme);
 
             // fetch strings
-            $php_files = new \Symfony\Component\Finder\Finder();
-            $php_files->files()
-                      ->in($theme->get_stylesheet_directory())
-                      ->exclude(basename($langPath))
-                      ->name('*.php')
-                      ->name('*.phtml');
-
-            $php_files = iterator_to_array($php_files->getIterator());
-            $php_files = array_map('strval', $php_files);
-
-            $this->debug('    Scanning '.count($php_files).' files'.PHP_EOL);
-
             $extractor                   = new WordPressExtractor();
             $extractor::$extractComments = true;
             $extractor::$textDomain      = $textDomain;
-            $translatable                = $extractor->fromFile($php_files);
+            $translatable                = $extractor->fromDirectory($theme->get_stylesheet_directory());
 
             // todo B fetch and merge translations from po file
 
             $translatable->setDomain($textDomain);
             $translatable->ksort();
 
-            $translatable->$morphMethod($langPath.'/empty.'.$input->getOption('format'));
+            // $this->updateTranslations($input, $morphMethod, $translatable, $langPath, $merge_mode, $textDomain);
+        }
+    }
 
-            // iterate over languages
-            foreach (glob($langPath.'/*.'.$input->getOption('format')) as $lang_file) {
-                $lang = basename($lang_file, '.'.$input->getOption('format'));
+    /**
+     * @param InputInterface $input
+     * @param                $morphMethod
+     * @param                $translatable
+     * @param                $langPath
+     * @param                $merge_mode
+     * @param                $textDomain
+     */
+    protected function updateTranslations(
+        InputInterface $input,
+        $morphMethod,
+        $translatable,
+        $langPath,
+        $merge_mode,
+        $textDomain
+    ) {
+        $translatable->$morphMethod($langPath.'/empty.'.$input->getOption('format'));
 
-                if ('empty' == $lang) {
-                    continue;
-                }
+        // iterate over languages
+        foreach (glob($langPath.'/*.'.$input->getOption('format')) as $lang_file) {
+            $lang = basename($lang_file, '.'.$input->getOption('format'));
 
-                // merge and push in php array
-                $lang_php = $langPath.DIRECTORY_SEPARATOR.$lang.'.'.$input->getOption('format');
-                if (file_exists($lang_php)) {
-                    $current_translation = \Gettext\Extractors\PhpArray::fromFile($lang_file);
-                    $current_translation->mergeWith($translatable, $merge_mode);
-                }
-
-                $current_translation->setDomain($textDomain);
-                $current_translation->ksort();
-
-                // json
-                $array = PhpArray::toArray($current_translation);
-
-                $values = current($array);
-                if (array_key_exists('', $values)) {
-                    unset( $values[''] );
-                }
-
-                $current_translation->$morphMethod($langPath.DIRECTORY_SEPARATOR.$lang.'.'.$input->getOption('format'));
-
-                // merge and push in mo file
-                $current_translation->toMoFile($langPath.DIRECTORY_SEPARATOR.$lang.'.mo');
-                $this->verbose('    Updated '.$lang.PHP_EOL);
+            if ('empty' == $lang) {
+                continue;
             }
+
+            // merge and push in php array
+            $lang_php = $langPath.DIRECTORY_SEPARATOR.$lang.'.'.$input->getOption('format');
+            if (file_exists($lang_php)) {
+                $current_translation = \Gettext\Extractors\PhpArray::fromFile($lang_file);
+                $current_translation->mergeWith($translatable, $merge_mode);
+            }
+
+            $current_translation->setDomain($textDomain);
+            $current_translation->ksort();
+
+            // json
+            $array = PhpArray::toArray($current_translation);
+
+            $values = current($array);
+            if (array_key_exists('', $values)) {
+                unset( $values[''] );
+            }
+
+            $current_translation->$morphMethod($langPath.DIRECTORY_SEPARATOR.$lang.'.'.$input->getOption('format'));
+
+            // merge and push in mo file
+            $current_translation->toMoFile($langPath.DIRECTORY_SEPARATOR.$lang.'.mo');
+            $this->verbose('    Updated '.$lang.PHP_EOL);
         }
     }
 }
