@@ -49,6 +49,7 @@ class Wp {
 			if ( empty( $parent_dir ) || $parent_dir === $dir ) {
 				break;
 			}
+
 			$dir = $parent_dir;
 		}
 	}
