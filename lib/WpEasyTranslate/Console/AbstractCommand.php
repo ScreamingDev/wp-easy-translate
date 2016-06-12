@@ -7,67 +7,75 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-abstract class AbstractCommand extends Command {
-	/**
-	 * @var InputInterface
-	 */
-	protected $input;
-	/**
-	 * @var OutputInterface
-	 */
-	protected $output;
+abstract class AbstractCommand extends Command
+{
+    /**
+     * @var InputInterface
+     */
+    protected $input;
+    /**
+     * @var OutputInterface
+     */
+    protected $output;
 
-	/**
-	 * @param string $message
-	 */
-	public function verbose( $message ) {
-		if ( false === OutputInterface::VERBOSITY_VERBOSE & $this->getOutput()->getVerbosity() ) {
-			return;
-		}
+    /**
+     * @param string $message
+     */
+    public function verbose($message)
+    {
+        if (false === OutputInterface::VERBOSITY_VERBOSE & $this->getOutput()->getVerbosity()) {
+            return;
+        }
 
-		$this->getOutput()->write( $message );
-	}
+        $this->getOutput()->write($message);
+    }
 
-	/**
-	 * @return InputInterface
-	 */
-	protected function getInput() {
-		return $this->input;
-	}
+    /**
+     * @return OutputInterface
+     */
+    protected function getOutput()
+    {
+        return $this->output;
+    }
 
-	/**
-	 * @param mixed $input
-	 */
-	protected function setInput( $input ) {
-		$this->input = $input;
-	}
+    /**
+     * @param mixed $output
+     */
+    protected function setOutput($output)
+    {
+        $this->output = $output;
+    }
 
-	protected function initialize( InputInterface $input, OutputInterface $output ) {
-		parent::initialize( $input, $output );
+    protected function debug($string)
+    {
+        if (false === OutputInterface::VERBOSITY_DEBUG & $this->getOutput()->getVerbosity()) {
+            return;
+        }
 
-		$this->setOutput( $output );
-		$this->setInput( $input );
-	}
+        $this->getOutput()->write('  '.$string);
+    }
 
-	protected function debug( $string ) {
-		if ( false === OutputInterface::VERBOSITY_DEBUG & $this->getOutput()->getVerbosity() ) {
-			return;
-		}
+    /**
+     * @return InputInterface
+     */
+    protected function getInput()
+    {
+        return $this->input;
+    }
 
-		$this->getOutput()->write( $string );
-	}
+    /**
+     * @param mixed $input
+     */
+    protected function setInput($input)
+    {
+        $this->input = $input;
+    }
 
-	/**
-	 * @return OutputInterface
-	 */
-	protected function getOutput() {
-		return $this->output;
-	}
+    protected function initialize(InputInterface $input, OutputInterface $output)
+    {
+        parent::initialize($input, $output);
 
-	/**
-	 * @param mixed $output
-	 */
-	protected function setOutput( $output ) {
-		$this->output = $output;
-	}
+        $this->setOutput($output);
+        $this->setInput($input);
+    }
 }
