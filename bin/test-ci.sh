@@ -17,9 +17,9 @@ function assert() {
 }
 
 # validate composer.json
-assert composer validate --strictg
+assert composer validate --strict
 
 # unit tests
-# assert bin/phpunit -c etc/phpunit.xml
+assert bin/phpunit lib/WpEasyTranslate/PHPUnit/
 
 exit $finalStatus
