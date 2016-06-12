@@ -85,7 +85,7 @@ class ThemesCommand extends AbstractCommand
             // fetch strings
             $php_files = new \Symfony\Component\Finder\Finder();
             $php_files->files()
-                      ->in($theme->get_template_directory())
+                      ->in($theme->get_stylesheet_directory())
                       ->exclude(basename($langPath))
                       ->name('*.php')
                       ->name('*.phtml');
