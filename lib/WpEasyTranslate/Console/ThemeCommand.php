@@ -4,11 +4,10 @@ namespace WpEasyTranslate\Console;
 
 
 use Gettext\Generators\PhpArray;
-use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Finder\Finder;
 use WpEasyTranslate\Gettext\WordPressExtractor;
 use WpEasyTranslate\Helper\Wp;
 use WpEasyTranslate\Helper\WpTheme;
@@ -20,8 +19,17 @@ use WpEasyTranslate\Helper\WpTheme;
  */
 class ThemeCommand extends AbstractCommand
 {
+    const CURRENT_THEME = 'the currently active theme';
+
     protected function configure()
     {
+        $this->addArgument(
+            'theme',
+            InputArgument::OPTIONAL,
+            'Theme to translate',
+            self::CURRENT_THEME
+        );
+
         $this->addOption(
             'format',
             null,
@@ -37,12 +45,6 @@ class ThemeCommand extends AbstractCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         Wp::load();
-
-        $merge_mode = \Gettext\Translations::MERGE_ADD
-                      | \Gettext\Translations::MERGE_REMOVE
-                      | \Gettext\Translations::MERGE_COMMENTS
-                      | \Gettext\Translations::MERGE_HEADERS
-                      | \Gettext\Translations::MERGE_PLURAL;
 
         $themes = wp_get_themes();
 
@@ -93,7 +95,7 @@ class ThemeCommand extends AbstractCommand
             $translatable->setDomain($textDomain);
             $translatable->ksort();
 
-            // $this->updateTranslations($input, $morphMethod, $translatable, $langPath, $merge_mode, $textDomain);
+            $this->updateTranslations($input, $morphMethod, $translatable, $langPath, $textDomain);
         }
     }
 
@@ -102,7 +104,6 @@ class ThemeCommand extends AbstractCommand
      * @param                $morphMethod
      * @param                $translatable
      * @param                $langPath
-     * @param                $merge_mode
      * @param                $textDomain
      */
     protected function updateTranslations(
@@ -110,7 +111,6 @@ class ThemeCommand extends AbstractCommand
         $morphMethod,
         $translatable,
         $langPath,
-        $merge_mode,
         $textDomain
     ) {
         $translatable->$morphMethod($langPath.'/empty.'.$input->getOption('format'));
@@ -127,7 +127,7 @@ class ThemeCommand extends AbstractCommand
             $lang_php = $langPath.DIRECTORY_SEPARATOR.$lang.'.'.$input->getOption('format');
             if (file_exists($lang_php)) {
                 $current_translation = \Gettext\Extractors\PhpArray::fromFile($lang_file);
-                $current_translation->mergeWith($translatable, $merge_mode);
+                $current_translation->mergeWith($translatable);
             }
 
             $current_translation->setDomain($textDomain);
