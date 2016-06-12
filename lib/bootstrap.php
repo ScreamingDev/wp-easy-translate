@@ -15,7 +15,7 @@ if ( ! isset( $parentComposer->config->{'vendor-dir'} ) || ! $parentComposer->co
 
 $ownComposer = json_decode( file_get_contents( __DIR__ . '/../composer.json' ) );
 
-define( 'EASYTRANSLATE_VERSION', $ownComposer->version );
+define( 'EASYTRANSLATE_VERSION', '0.1.0' );
 
 // highest composer.json
 
