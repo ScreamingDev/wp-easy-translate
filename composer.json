@@ -8,7 +8,6 @@
     }
   ],
   "license": "MIT",
-  "version": "0.2.1",
   "config": {
     "bin-dir": "bin",
     "vendor-dir": "opt"
@@ -27,6 +26,7 @@
     "gettext/gettext": "~3"
   },
   "require-dev": {
-    "sourcerer-mike/phpsemver": "~3"
+    "sourcerer-mike/phpsemver": "~3",
+    "wp-cli/wp-cli": "~0.23"
   }
 }
