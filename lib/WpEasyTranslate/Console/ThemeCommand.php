@@ -18,7 +18,7 @@ use WpEasyTranslate\Helper\WpTheme;
  *
  * @package WpEasyTranslate\Console
  */
-class ThemesCommand extends AbstractCommand
+class ThemeCommand extends AbstractCommand
 {
     protected function configure()
     {
