@@ -226,6 +226,12 @@ class ThemeCommand extends AbstractCommand
             );
 
             $this->writeTranslation($input, $output, $langFile, $targetTranslations);
+
+            $moFile = dirname($langFile) . '/' . $lang . '.mo';
+
+            $targetTranslations->toMoFile($moFile);
+
+            $this->debug('Wrote ' . basename($moFile) . PHP_EOL);
         }
     }
 }

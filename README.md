@@ -5,12 +5,13 @@
 This tool helps you with your tranlations.
 Real developer use their console ;)
 
-    wp-easy-translate themes
+    wp-easy-translate theme twentysixteen
+    wp-easy-translate plugin akismet
 
 And then the magic happens:
 
-- All translations with their text-domain will be fetched
-- Your source files (po, php or json) will be updates.
+- All translations with will be fetched.
+- Your source files (po, php or json) will be updated.
 - The binaries (MO-Files) will be updated to.
 
 Translate with ease!
@@ -62,7 +63,7 @@ Work and run `wp-easy-translate themes` again to update your PO-Files:
 
 ## Copy and Translate
 
-Everytime `wp-easy-translate themes` runs there will be a "empty.po" (or "empty.php", "empty.json") file in the languages
+Everytime `wp-easy-translate theme foo` runs there will be a "empty.po" (or "empty.php", "empty.json") file in the languages
 folder of every theme. Just copy it to "de_DE.po" or "en_GB.po" (or "php", "json") and add the translations.
 
-With every run of `wp-easy-translate themes` the according MO-File ("de_DE.mo", "en_GB.mo") will be updates.
+With every run of `wp-easy-translate theme foo` the according MO-File ("de_DE.mo", "en_GB.mo") will be updated.
