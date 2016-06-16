@@ -52,15 +52,7 @@ class PluginCommand extends AbstractCommand
 
         require_once ABSPATH . '/wp-admin/includes/plugin.php';
 
-        $plugins = Wp::getPlugins();
-
-        if (!array_key_exists($targetPluginSlug, $plugins)) {
-            throw new \DomainException(
-                'Plugin ' . $targetPluginSlug . ' does not exist.'
-            );
-        }
-
-        $targetPluginDir = $plugins[$targetPluginSlug];
+        $targetPluginDir = $this->resolvePluginDir($targetPluginSlug);
 
         $targetPluginRealPath = WP_CONTENT_DIR . '/plugins/' . $targetPluginDir;
 
@@ -89,10 +81,7 @@ class PluginCommand extends AbstractCommand
 
         $this->verbose(' (TextDomain: ' . $textDomain . ')' . PHP_EOL);
 
-        $langDir = 'languages';
-        if (isset($pluginData['DomainPath']) && $pluginData['DomainPath']) {
-            $langDir = $pluginData['DomainPath'];
-        }
+        $langDir = $this->resolveLanguagesDir($pluginData);
 
         $langPath = dirname($targetPluginRealPath) . '/' . $langDir;
 
@@ -113,7 +102,7 @@ class PluginCommand extends AbstractCommand
         $translatable->ksort();
 
         $this->sanitizeTranslation($translatable, $textDomain, dirname($targetPluginRealPath));
-        
+
         // create skeleton
         // file name is same as the slug which is a common way if you look at twenty* themes.
         $skeletonBasename = $textDomain . '.' . $input->getOption('format');
@@ -142,7 +131,7 @@ class PluginCommand extends AbstractCommand
 
         $this->writeTranslation($input, $output, $skeletonPath, $skeletonTranslation);
 
-        // $this->updateTranslations($input, $output, $targetTheme, $skeletonTranslation, $textDomain);
+        $this->updateTranslations($input, $output, $pluginData, $skeletonTranslation, $targetPluginSlug, $textDomain);
     }
 
     private function sanitizeTranslation($translatable, $textDomain, $basePath)
@@ -211,20 +200,28 @@ class PluginCommand extends AbstractCommand
     protected function updateTranslations(
         InputInterface $input,
         OutputInterface $output,
-        \WP_Theme $targetTheme,
+        $pluginData,
         Translations $skeletonTranslation,
+        $targetPluginSlug,
         $textDomain
     )
     {
         $this->verbose('Updating translations ...' . PHP_EOL);
 
-        $langPath = WpTheme::resolveLanguagesPath($targetTheme);
+        $targetPluginDir = $this->resolvePluginDir($targetPluginSlug);
+
+        $targetPluginRealPath = WP_CONTENT_DIR . '/plugins/' . $targetPluginDir;
+
+        $langDir = $this->resolveLanguagesDir($pluginData);
+
+        $langPath = dirname($targetPluginRealPath) . '/' . $langDir;
+
         $parseMethod = 'from' . ucfirst($input->getOption('format')) . 'File';
 
         foreach (glob($langPath . '/*.' . $input->getOption('format')) as $langFile) {
             $lang = basename($langFile, '.' . $input->getOption('format'));
 
-            if ($targetTheme->get_stylesheet() == $lang) {
+            if ($textDomain == $lang) {
                 continue;
             }
 
@@ -240,5 +237,36 @@ class PluginCommand extends AbstractCommand
 
             $this->writeTranslation($input, $output, $langFile, $targetTranslations);
         }
+    }
+
+    /**
+     * @param $pluginData
+     * @return array
+     */
+    protected function resolveLanguagesDir($pluginData)
+    {
+        if (isset($pluginData['DomainPath']) && $pluginData['DomainPath']) {
+            return $pluginData['DomainPath'];
+        }
+
+        return 'languages';
+    }
+
+    /**
+     * @param $targetPluginSlug
+     * @return mixed
+     */
+    protected function resolvePluginDir($targetPluginSlug)
+    {
+        $plugins = Wp::getPlugins();
+
+        if (!array_key_exists($targetPluginSlug, $plugins)) {
+            throw new \DomainException(
+                'Plugin ' . $targetPluginSlug . ' does not exist.'
+            );
+        }
+
+        $targetPluginDir = $plugins[$targetPluginSlug];
+        return $targetPluginDir;
     }
 }
