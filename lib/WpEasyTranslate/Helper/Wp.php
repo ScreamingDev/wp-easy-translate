@@ -17,6 +17,20 @@ class Wp {
 		require_once $path . DIRECTORY_SEPARATOR . 'wp-load.php';
 	}
 
+	public static function getPlugins()
+	{
+		$pluginSlugs = [];
+		foreach (get_plugins() as $pluginDir => $pluginData) {
+			if (dirname($pluginDir) == '.') {
+				continue;
+			}
+
+			$pluginSlugs[dirname($pluginDir)] = $pluginDir;
+		}
+
+		return $pluginSlugs;
+	}
+
 	/**
 	 * Find the directory that contains the WordPress files.
 	 * Defaults to the current working dir.
