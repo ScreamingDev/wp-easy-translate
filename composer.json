@@ -21,8 +21,8 @@
     }
   },
   "require": {
-    "symfony/finder": "~2",
-    "symfony/console": "~2",
+    "symfony/finder": ">=2.8 || ~3",
+    "symfony/console": ">=2.8 || ~3",
     "gettext/gettext": "~3"
   },
   "require-dev": {
