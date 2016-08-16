@@ -34,7 +34,7 @@ class PluginCommand extends AbstractCommand
             'format',
             null,
             InputOption::VALUE_OPTIONAL,
-            'Format to fetch translations from. Can be "json", "po" or "php".',
+            'Format to fetch translations from. Can be "csv", "json", "po" or "php".',
             'po'
         );
 
@@ -117,7 +117,7 @@ class PluginCommand extends AbstractCommand
 
         $skeletonTranslation = new Translations();
         if (file_exists($skeletonPath)) {
-            $extractMethod = 'from' . ucfirst($input->getOption('format')) . 'File';
+            $extractMethod = $this->getExtractMethod( $input );
 
             /** @var Translations $skeletonTranslation */
             $skeletonTranslation = call_user_func(['\\Gettext\\Translations', $extractMethod], [$skeletonPath]);
@@ -134,7 +134,22 @@ class PluginCommand extends AbstractCommand
         $this->updateTranslations($input, $output, $pluginData, $skeletonTranslation, $targetPluginSlug, $textDomain);
     }
 
-    private function sanitizeTranslation($translatable, $textDomain, $basePath)
+	/**
+	 * @param InputInterface $input
+	 *
+	 * @return string
+	 */
+	protected function getExtractMethod( InputInterface $input ) {
+		$format = ucfirst( $input->getOption( 'format' ) );
+
+		if ($format == 'Csv') {
+			$format .= 'Dictionary';
+		}
+
+		return 'from' . $format . 'File';
+	}
+
+	private function sanitizeTranslation($translatable, $textDomain, $basePath)
     {
         foreach ($translatable as $key => $translation) {
             /** @var Translation $translation */
@@ -177,6 +192,7 @@ class PluginCommand extends AbstractCommand
             'json' => 'toJsonDictionaryString',
             'po' => 'toPoString',
             'php' => 'toPhpArrayString',
+	        'csv' => 'toCsvDictionaryString'
         ];
 
         if (!isset($morphMapping[$input->getOption('format')])) {
@@ -216,7 +232,7 @@ class PluginCommand extends AbstractCommand
 
         $langPath = dirname($targetPluginRealPath) . '/' . $langDir;
 
-        $parseMethod = 'from' . ucfirst($input->getOption('format')) . 'File';
+        $parseMethod = $this->getExtractMethod( $input );
 
         foreach (glob($langPath . '/*.' . $input->getOption('format')) as $langFile) {
             $lang = basename($langFile, '.' . $input->getOption('format'));
