@@ -10,9 +10,9 @@ Real developer use their console ;)
 
 And then the magic happens:
 
-- All translations with will be fetched.
+- All translations will be fetched.
 - Your source files (po, php or json) will be updated.
-- The binaries (MO-Files) will be updated to.
+- The binaries (MO-Files) will be updated too.
 
 Translate with ease!
 
@@ -32,7 +32,7 @@ Run `wp-easy-translate themes --format php` to get a **PHP-Array**:
         'General' => 
         array (
           0 => '',
-          1 => 'Allgemeines', // THIS IS VERY THE TRANSLATION HAPPENS
+          1 => 'Allgemeines', // THIS IS WHERE THE TRANSLATION HAPPENS
         ),
         'Author' =>
          
@@ -49,21 +49,20 @@ and clean list:
     }
 
 Formats like **YAML** are planned.
-Even **CSV** will come so that your customer can contribut with translations made in Excel.
+Even **CSV** will come so that your customer can contribute with translations made in Excel.
 I guess they don't like to edit JSON or YAML files ;)
 
 ## Updates every time
 
 Work and run `wp-easy-translate themes` again to update your PO-Files:
 
-- Obsolete translations will be removed
-- New translations will be added
+- Obsolete translations will be removed.
+- New translations will be added.
 - MO-Files are updated every time.
-
 
 ## Copy and Translate
 
-Everytime `wp-easy-translate theme foo` runs there will be a "empty.po" (or "empty.php", "empty.json") file in the languages
+Every time `wp-easy-translate theme foo` runs there will be an "empty.po" (or "empty.php", "empty.json") file in the languages
 folder of every theme. Just copy it to "de_DE.po" or "en_GB.po" (or "php", "json") and add the translations.
 
-With every run of `wp-easy-translate theme foo` the according MO-File ("de_DE.mo", "en_GB.mo") will be updated.
+With every run of `wp-easy-translate theme foo` the corresponding MO-File ("de_DE.mo", "en_GB.mo") will be updated.
